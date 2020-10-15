@@ -1,0 +1,58 @@
+server.port: 8080
+
+spring:
+
+  # Define the keycloak productive realm here
+  realm: muenchen.de
+
+  # spring cloud gateway config
+  cloud:
+    gateway:
+      actuator:
+        verbose:
+          enabled: false
+      globalcors:
+        corsConfigurations:
+          # The cors configuration to allow frontend developers cross origin request via this api gateway
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:8081"
+              - "http://127.0.0.1:8081"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+      routes:
+        - id: sso
+          uri: https://sso.muenchen.de/
+          predicates:
+            - Path=/api/sso/userinfo
+          filters:
+            - RewritePath=/api/sso/userinfo, /auth/realms/${spring.realm}/protocol/openid-connect/userinfo
+        - id: backend
+          uri: http://localhost:39146/
+          predicates:
+            - Path=/api/vuedemo-backend-service/**
+          filters:
+            - RewritePath=/api/vuedemo-backend-service/(?<urlsegments>.*), /$\{urlsegments}
+            - RemoveResponseHeader=WWW-Authenticate
+      default-filters:
+        - RemoveResponseHeader=Expires
+        - RemoveRequestHeader=cookie
+        - RemoveRequestHeader=x-xsrf-token
+        - CustomTokenRelay=
+
+  # security config
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: https://sso.muenchen.de/auth/realms/${spring.realm}
+        registration:
+          keycloak:
+            client-id: vuedemo
+            client-secret: 6e923484-dbf2-4441-8025-c7dd646a120f
+
+  http:
+    log-request-details: false

@@ -1,0 +1,168 @@
+#!groovy
+@Library('muenchen-pipeline-library@develop') _
+
+import de.muenchen.pipeline.library.Constants
+
+def artifactoryConfig
+
+/*
+    Jenkins Pipeline Script zum Deployment von Services in Openshift.
+    Fuehrt die folgenden Schritte aus:
+    - Checkout des Codes aus Gitlab
+    - Build, Unit-Tests, Sonarqube-Ueberpruefungen, Jar-File-Erstellung
+    - Ablage des Jar-Files in Artifactory
+    - Durchfuehrung von Smoke Tests (sofern konfiguriert)
+    - Deployment in Testumgebung (sofern konfiguriert bzw. manuell angestossen)
+ */
+pipeline {
+    environment {
+        // GITLAB URL, in dem der Code des Microservices abgelegt ist
+        GITLAB_URL = 'git@git.muenchen.de:ccse/services/refarch-showcase/refarch-showcase-frontend.git'
+        // Gitlab Branch der ausgecheckt werden soll
+        GITLAB_BRANCH = "${env.gitlabBranch ?: 'master'}"
+        // Pfad zur pom.xml, die fuer den Build verwendet wird
+        POM = 'pom.xml'
+
+        // Name des Openshift Projekts, in das deployed werden soll
+        OS_PROJECT = 'km83'
+
+
+        // Wird TARGET_PROMOTION_TYPE auf manual gesetzt, pausiert Jenkins bis zur manuellen Eingabe über die Jenkins-Oberflaeche.
+        // Bei Eingabe eines anderen Werts, wird der Job zum Deployment in die K-Umgebung (JOB_TARGET_ENV_DEPLOYMENT) sofort angestossen
+        TARGET_PROMOTION_TYPE = 'manual'
+
+        // Anwender, die bei TARGET_PROMOTION_TYPE='manual' den Jenkins Job JOB_TARGET_ENV_DEPLOYMENT anstossen koennen
+        SUBMITTER_TARGET_DEPLOYMENT = 'USERS_THAT_CAN_START_JOB_TARGET_ENV_DEPLOYMENT'
+
+        // Jenkins Job zum Deployment des Openshift Images in die Testumgebung.
+        // Tipp: Sind die Jenkins Jobs in einer Gruppe, muss der Gruppenname vor dem Job stehen, Beispiel: animad/animad-testenv
+        JOB_TARGET_ENV_DEPLOYMENT = 'JENKINS_JOB_DEPLOYMENT_TARGET'
+
+        // Gitlab URL zum Testcode der vor dem Deploment in die Test-Umgebung ausgeführt werden soll. Testcode wird ausgecheckt, kompiliert und ausgefuehrt.
+        // Ist keine URL angegeben, werden keine Tests ausgefuehrt
+        GITLAB_SMOKETESTS_URL=''
+
+        // Artifactory settings - siehe auch:
+        // https://wiki.muenchen.de/anwendungsentwicklung/index.php?title=Jenkins-Shared-Libraries&sfr=anwendungsentwicklung&title=Jenkins-Shared-Libraries#configureArtifactory
+        // ueberschreibt den Default-Wert der Shared Library
+        DEPLOY_ARTIFACTS = false
+
+        PREPARE_PROMOTION = false
+
+
+    }
+
+    options {
+        buildDiscarder (logRotator(numToKeepStr: '5')) // Keep the last x build histories
+        timeout        (time: 15, unit: 'MINUTES')   // Abort build after n minutes
+    }
+
+    agent any
+
+    tools {
+        jdk Constants.JDK_VERSION
+        oc Constants.OC_VERSION
+        nodejs Constants.NODEJS_VERSION
+    }
+
+    stages {
+        stage('Commit') {
+            steps {
+                git branch: GITLAB_BRANCH, credentialsId: Constants.GIT_CREDENTIALS_ID, url: GITLAB_URL
+
+                script {
+                    // Configure Artifactory
+                    artifactoryConfig = configureArtifactory deployArtifacts: DEPLOY_ARTIFACTS
+
+                    artifactoryConfig.rtMaven.run pom: POM, goals: 'clean install -Drevision='+ BUILD_NUMBER, buildInfo: artifactoryConfig.buildInfo
+
+                    junit allowEmptyResults: true, testResults: Constants.TEST_RESULTS
+
+                    // Static analysis
+                    performSonarAnalysis pom: '$POM'
+
+                    // Artifactory Deploy
+                    if (GITLAB_BRANCH == 'master') {
+                        artifactoryConfig.rtMaven.deployer.deployArtifacts artifactoryConfig.buildInfo
+                        artifactoryConfig.server.publishBuildInfo artifactoryConfig.buildInfo
+                    }
+                }
+            }
+            post {
+                failure {
+                    updateGitlabCommitStatus name: "${STAGE_NAME}", state: 'failed'
+                }
+                success {
+                    updateGitlabCommitStatus name: "${STAGE_NAME}", state: 'success'
+                }
+            }
+        }
+
+        stage ('Deploy To Dev') {
+            when {
+                anyOf { branch 'master'; branch null }
+            }
+            steps {
+                script {
+                    if (GITLAB_BRANCH == 'master') {
+                        deployToDev projectName: OS_PROJECT,
+                                    appPath: 'apigateway'
+                    } else {
+                        echo "Skip Build - only on master."
+                    }
+                }
+            }
+            post {
+                failure {
+                    updateGitlabCommitStatus name: "${STAGE_NAME}", state: 'failed'
+                }
+                success {
+                    updateGitlabCommitStatus name: "${STAGE_NAME}", state: 'success'
+                }
+            }
+        }
+
+       /* stage ('Testexecution') {
+            when {
+                allOf {
+                    anyOf { branch 'master'; branch null }
+                    not { environment name: 'GITLAB_SMOKETESTS_URL', value: '' }
+                }
+            }
+            steps {
+                executeTest artifactoryConfig: artifactoryConfig,
+                        gitUrl: GITLAB_SMOKETESTS_URL,
+                        luwakBaseUrl:
+            }
+               post {
+                    failure {
+                        updateGitlabCommitStatus name: "${STAGE_NAME}", state: 'failed'
+                    }
+                    success {
+                        updateGitlabCommitStatus name: "${STAGE_NAME}", state: 'success'
+                    }
+                }
+        }*/
+
+       /* stage ('Prepare to Promote') {
+            when {
+                anyOf { branch 'master'; branch null}
+            }
+            steps {
+                script {
+                    prepareToPromote jobTargetEnv: JOB_TARGET_ENV_DEPLOYMENT,
+                                     submitterTargetEnv: SUBMITTER_TARGET_DEPLOYMENT,
+                                     preparePromotion: PREPARE_PROMOTION
+                }
+            }
+               post {
+                    failure {
+                        updateGitlabCommitStatus name: "${STAGE_NAME}", state: 'failed'
+                    }
+                    success {
+                        updateGitlabCommitStatus name: "${STAGE_NAME}", state: 'success'
+                    }
+                }
+        }*/
+    }
+}
