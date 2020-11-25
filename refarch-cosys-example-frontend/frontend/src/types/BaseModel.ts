@@ -1,3 +1,0 @@
-type BaseModel = {
-  id: Id;
-};
