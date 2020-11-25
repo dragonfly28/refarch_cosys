@@ -1,2 +1,2 @@
 # refarch_cosys
-Examples for RefArch integration with CoSys
+Example for an reference architecture application which integrates with CoSys.
