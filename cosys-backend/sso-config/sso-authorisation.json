@@ -1,0 +1,72 @@
+{
+    "allowRemoteResourceManagement": false,
+    "policyEnforcementMode": "ENFORCING",
+    "resources": [
+        {
+            "name": "COSYS_BACKEND_READ_THEENTITY",
+            "type": "cosys_prototype-cosys-backend-service",
+            "scopes": []
+        },
+        {
+            "name": "COSYS_BACKEND_WRITE_THEENTITY",
+            "type": "cosys_prototype-cosys-backend-service",
+            "scopes": []
+        },
+        {
+            "name": "COSYS_BACKEND_DELETE_THEENTITY",
+            "type": "cosys_prototype-cosys-backend-service",
+            "scopes": []
+        }
+    ],
+    "policies": [
+        {
+            "name": "rolepolicy_admin",
+            "type": "role",
+            "logic": "POSITIVE",
+            "decisionStrategy": "AFFIRMATIVE",
+            "config": {
+                "roles": "[{\"id\":\"cosys_prototype/clientrole_admin\",\"required\":false}]"
+            }
+        },
+        {
+            "name": "rolepolicy_readonly",
+            "type": "role",
+            "logic": "POSITIVE",
+            "decisionStrategy": "AFFIRMATIVE",
+            "config": {
+                "roles": "[{\"id\":\"cosys_prototype/clientrole_readonly\",\"required\":false}]"
+            }
+        },
+        {
+            "name": "permission_COSYS_BACKEND_DELETE_THEENTITY",
+            "type": "resource",
+            "logic": "POSITIVE",
+            "decisionStrategy": "AFFIRMATIVE",
+            "config": {
+                "resources": "[\"COSYS_BACKEND_DELETE_THEENTITY\"]",
+                "applyPolicies": "[\"rolepolicy_admin\"]"
+            }
+        },
+        {
+            "name": "permission_COSYS_BACKEND_WRITE_THEENTITY",
+            "type": "resource",
+            "logic": "POSITIVE",
+            "decisionStrategy": "AFFIRMATIVE",
+            "config": {
+                "resources": "[\"COSYS_BACKEND_WRITE_THEENTITY\"]",
+                "applyPolicies": "[\"rolepolicy_admin\"]"
+            }
+        },
+        {
+            "name": "permission_COSYS_BACKEND_READ_THEENTITY",
+            "type": "resource",
+            "logic": "POSITIVE",
+            "decisionStrategy": "AFFIRMATIVE",
+            "config": {
+                "resources": "[\"COSYS_BACKEND_READ_THEENTITY\"]",
+                "applyPolicies": "[\"rolepolicy_admin\",\"rolepolicy_readonly\"]"
+            }
+        }
+    ],
+    "scopes": []
+}

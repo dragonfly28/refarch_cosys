@@ -1,0 +1,121 @@
+#!groovy
+
+@Library('muenchen-pipeline-library')
+
+import de.muenchen.pipeline.library.Constants
+
+def artifactoryConfig
+
+
+/*
+ * A pipeline script with basic functionality.
+ * This script is using the Jenkins-Shared-Libraries which is linked down below.
+ *
+ * https://wiki.muenchen.de/anwendungsentwicklung/index.php/Jenkins-Shared-Libraries
+ *
+ * For advanced features the basic script has to be customized with the above mentioned library.
+ */
+pipeline {
+
+    environment {
+        POM = 'pom.xml'
+    }
+
+    options {
+        buildDiscarder (logRotator(numToKeepStr: '5')) // Keep the last x build histories
+        timeout        (time: 15, unit: 'MINUTES')   // Abort build after n minutes
+    }
+
+    agent any
+
+    tools {
+        jdk Constants.JDK_VERSION
+        oc Constants.OC_VERSION
+    }
+
+    stages {
+
+        /*
+         * Initialize pipeline and jenkins workspace.
+         */
+        stage ('Initialize') {
+            steps {
+                cleanWs()
+
+                checkout scm
+
+                script {
+                    artifactoryConfig = configureArtifactory deployArtifacts: false
+                }
+            }
+        }
+
+        /*
+         * Build with maven in jenkins workspace.
+         */
+        stage ('Build') {
+            steps {
+                script {
+                    artifactoryConfig.rtMaven.run pom: POM,
+                        goals: 'clean install',
+                        buildInfo: artifactoryConfig.buildInfo
+                }
+            }
+        }
+
+        /*
+         * Check the code with SonarQube.
+         */
+        stage ('SonarQube analysis') {
+            steps {
+                script {
+                    performSonarAnalysis()
+                }
+            }
+        }
+
+        /*
+         * Deploys the artifact into artifactory.
+         */
+        stage ('Deploy to artifactory') {
+            steps {
+                script {
+                    artifactoryConfig.rtMaven.deployer.deployArtifacts artifactoryConfig.buildInfo
+                    artifactoryConfig.server.publishBuildInfo artifactoryConfig.buildInfo
+                }
+            }
+        }
+
+        /*
+         * Build and deploy image to OpenShift with default template.
+         */
+        stage ('Deploy image to OpenShift') {
+            steps {
+                script {
+
+                    buildAndDeployImage projectName: '<YOUR_OPENSHIFT_PROJECT>',
+                            envDC: [[name: 'SPRING_PROFILES_ACTIVE',value: 'dev,no-security'], [name: 'SERVER_PORT',value: '8080'], [name: 'TOMCAT_GRACEFULSHUTDOWN_PRE_WAIT_SECONDS',value: '5']]
+
+                }
+            }
+        }
+
+    }
+
+    /*
+     * Send a mail after successful or unsuccessful pipeline run.
+     */
+    post {
+        regression {
+            script {
+                sendEmail()
+            }
+        }
+        fixed {
+            script {
+                sendEmail()
+            }
+        }
+    }
+
+}
