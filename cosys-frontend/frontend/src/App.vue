@@ -45,9 +45,9 @@
       clipped
     >
       <v-list>
-        <v-list-item :to="{path: '/getstarted'}">
+        <v-list-item :to="{path: '/antragsformular'}">
           <v-list-item-content>
-            <v-list-item-title>Get started</v-list-item-title>
+            <v-list-item-title>Antragsformular</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
       </v-list>

@@ -9,38 +9,28 @@
         mb-4
       >
         <h1 class="display-2 font-weight-bold mb-10">
-          Antrags-Formular
+          Und hier die AntragsForm...
+          <AntragsForm />
         </h1>
-
       </v-flex>
     </v-layout>
-    <yes-no-dialog
-      v-model="saveLeaveDialog"
-      dialogtitle="Wirklich verlassen?"
-      dialogtext="Wollen Sie das Antragsformular wirklich verlassen?"
-      @no="cancel"
-      @yes="leave"
-    />
   </v-container>
 </template>
 
 <script lang="ts">
-    import {Component, Mixins} from 'vue-property-decorator';
-    import SaveLeaveMixin from "@/mixins/saveLeaveMixin";
-    import YesNoDialog from "@/components/common/YesNoDialog.vue";
-    import DatetimeInput from "@/components/common/DatetimeInput.vue";
+import { Component, Vue } from "vue-property-decorator";
+import AntragsForm from "@/components/AntragsForm.vue";
 
-    @Component({
-        components: {DatetimeInput, YesNoDialog}
-    })
-    export default class GetStarted extends Mixins(SaveLeaveMixin) {
+@Component({
+  components: {AntragsForm},
+})
+export default class GetStarted extends Vue {
+  dokumentationClicked = false;
+  date: Date | null = null;
+  valid = true;
 
-        dokumentationClicked = false;
-        date: Date | null = null
-        valid = true
-
-        isDirty(): boolean {
-            return !this.dokumentationClicked;
-        }
-    }
+  isDirty(): boolean {
+    return !this.dokumentationClicked;
+  }
+}
 </script>

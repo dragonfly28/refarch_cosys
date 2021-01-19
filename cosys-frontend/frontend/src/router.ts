@@ -1,7 +1,7 @@
 import Vue from "vue";
 import Router from "vue-router";
 import Main from './views/Main.vue';
-import GetStarted from './views/GetStarted.vue';
+import AntragsFormular from './views/AntragsFormular.vue';
 
 Vue.use(Router);
 
@@ -31,9 +31,9 @@ export default new Router({
             component: Main
         },
         {
-            path: "/getstarted",
-            name: "getstarted",
-            component: GetStarted
+            path: "/antragsformular",
+            name: "antragsformular",
+            component: AntragsFormular
         },
         {path: '*', redirect: '/'} //Fallback 2
     ]

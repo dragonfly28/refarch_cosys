@@ -1,0 +1,8 @@
+{
+	"--prefix-delimiter":".",
+	"--datafile":"//multi",
+	"--input-language":"Deutsch",
+	"--output-language":"Deutsch",
+	"-@1":"",
+	"--logfile":"merge.log"
+}
