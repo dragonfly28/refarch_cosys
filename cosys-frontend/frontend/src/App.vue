@@ -50,6 +50,11 @@
             <v-list-item-title>Antragsformular</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
+        <v-list-item :to="{path: '/test'}">
+          <v-list-item-content>
+            <v-list-item-title>Test</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
       </v-list>
     </v-navigation-drawer>
     <v-content class="main">

@@ -2,6 +2,7 @@ import Vue from "vue";
 import Router from "vue-router";
 import Main from './views/Main.vue';
 import AntragsFormular from './views/AntragsFormular.vue';
+import HelloWorld from './views/HelloWorld.vue';
 
 Vue.use(Router);
 
@@ -34,6 +35,11 @@ export default new Router({
             path: "/antragsformular",
             name: "antragsformular",
             component: AntragsFormular
+        },
+        {
+            path: "/test",
+            name: "test",
+            component: HelloWorld
         },
         {path: '*', redirect: '/'} //Fallback 2
     ]
