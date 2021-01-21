@@ -2,7 +2,6 @@
   <div>
     <v-form
       ref="form"
-      @submit="save"
     >
       <p>{{ message }}</p>
       <v-row>
@@ -25,7 +24,12 @@
       </v-row>
       <v-row>
         <v-col class="text-right">
-          <v-btn id="bltdialog-btn-save" color="primary" text @click="createPdf">
+          <v-btn
+            id="bltdialog-btn-save"
+            color="primary"
+            text
+            @click="createPdf"
+          >
             PDF erzeugen
           </v-btn>
         </v-col>
@@ -58,13 +62,13 @@ export default class AntragsForm extends Vue {
 
   createPdf(): void {
     console.log("createPdf aufgerufen!!!");
-    const form = this.$refs.form as any;
+    /* const form = this.$refs.form as any;
     if (form.validate()) {
       this.$emit("save", this.value);
       this.close();
     } else {
       console.log("Bitte Fehleingaben korrigieren");
-    }
+    } */
   }
 }
 </script>
