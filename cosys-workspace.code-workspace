@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "cosys-frontend\\frontend"
+		},
+		{
+			"path": "cosys-frontend\\apigateway"
+		},
+		{
+			"path": "cosys-backend"
+		}
+	],
+	"settings": {}
+}

@@ -9,7 +9,7 @@
         mb-4
       >
         <h1 class="display-2 font-weight-bold mb-10">
-          Ich bin die View AntragsFormular...
+          Ich bin die AntragsView...
           <AntragsForm />
         </h1>
       </v-flex>
@@ -25,13 +25,7 @@ import AntragsForm from "@/components/AntragsForm.vue";
   components: {AntragsForm},
 })
 
-export default class GetStarted extends Vue {
-  dokumentationClicked = false;
-  date: Date | null = null;
-  valid = true;
-
-  isDirty(): boolean {
-    return !this.dokumentationClicked;
-  }
+export default class AntragsView extends Vue {
+  
 }
 </script>
